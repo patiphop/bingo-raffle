@@ -30,6 +30,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Create .env
+        run: |
+          echo "SHEET_URL=${SHEET_URL}" > .env
+        env:
+          SHEET_URL: ${{ secrets.SHEET_URL }}
+
       - name: Build
         run: npm run build
         env:
