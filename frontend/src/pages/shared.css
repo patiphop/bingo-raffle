@@ -1,0 +1,8 @@
+@import url('../../css/styles.css');
+
+/* Board-specific overrides from old board.html */
+body { background: #0b0f1a; color: #f3f6ff; }
+.gridBoard { display:grid; grid-template-columns: repeat(15, minmax(0,1fr)); gap:6px; }
+.gridBoard .n { padding:8px 6px; border-radius:6px; background:#11162a; text-align:center; }
+.gridBoard .n.called { background:#1f3a8a; font-weight:700; }
+
