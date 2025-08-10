@@ -43,21 +43,24 @@ function apiCard(gameId, participantId){ return getJSON(`/api/card?gameId=${enco
 function apiClaim(p){ return postJSON('/api/claim', p); }
 function apiBoard(gameId){ return getJSON(`/api/board?gameId=${encodeURIComponent(gameId)}`); }
 
-let __polling = false;
-async function pollBoard(gameId, onUpdate, intervalSec){
-  intervalSec = Number(intervalSec || (Number((typeof localStorage!=='undefined' && localStorage.getItem('boardRefreshSec')) || 3)));
-  if(__polling) return; __polling = true;
+function pollBoard(gameId, onUpdate, intervalSec){
+  let stopped = false;
+  const stop = () => { stopped = true; };
+  const iv = Number(intervalSec || (Number((typeof localStorage!=='undefined' && localStorage.getItem('boardRefreshSec')) || 3)));
   let lastStamp = '';
-  while(true){
-    try{
-      const snap = await apiBoard(gameId);
-      if(snap && snap.lastUpdatedAt && snap.lastUpdatedAt !== lastStamp){
-        lastStamp = snap.lastUpdatedAt;
-        if(typeof onUpdate === 'function') onUpdate(snap);
-      }
-    }catch(e){ console.warn('poll error', e); }
-    await new Promise(r=>setTimeout(r, intervalSec*1000));
-  }
+  (async function loop(){
+    while(!stopped){
+      try{
+        const snap = await apiBoard(gameId);
+        if(snap && snap.lastUpdatedAt && snap.lastUpdatedAt !== lastStamp){
+          lastStamp = snap.lastUpdatedAt;
+          if(typeof onUpdate === 'function') onUpdate(snap);
+        }
+      }catch(e){ console.warn('poll error', e); }
+      await new Promise(r=>setTimeout(r, iv*1000));
+    }
+  })();
+  return stop;
 }
 
 export {

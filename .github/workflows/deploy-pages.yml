@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main, master ]
   workflow_dispatch:
 
 permissions:
@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
+  group: pages
   cancel-in-progress: true
 
 jobs:
@@ -24,27 +24,26 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 18
           cache: npm
-
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
 
       - name: Install dependencies
         run: npm ci
 
       - name: Build
         run: npm run build
+        env:
+          # Add your env here or use repository/organization secrets
+          SHEET_URL: ${{ secrets.SHEET_URL }}
 
-      - name: Upload Pages artifact
+      - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # เปลี่ยน path ให้ตรงกับโฟลเดอร์เอาต์พุตของโปรเจ็กต์คุณ (เช่น dist, build, out)
-          path: ./dist
+          path: dist
 
   deploy:
-    runs-on: ubuntu-latest
     needs: build
+    runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

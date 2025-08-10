@@ -7,6 +7,8 @@ export default function Host(){
   const [called, setCalled] = useState([]);
   const [lastValue, setLastValue] = useState('');
   const [winners, setWinners] = useState([]);
+  const [joinUrl, setJoinUrl] = useState('');
+  const [qrUrl, setQrUrl] = useState('');
 
   const onStart = async (e)=>{
     e.preventDefault();
@@ -28,6 +30,13 @@ export default function Host(){
       const res = await apiStart(cfg);
       setCurrentGameId(res.gameId);
       setStartResult(JSON.stringify(res,null,2));
+      setJoinUrl(res.joinUrl || '');
+      if(res.joinUrl){
+        const u = new URL(res.joinUrl);
+        setQrUrl(`https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=${encodeURIComponent(u.href)}`);
+      } else {
+        setQrUrl('');
+      }
     }catch(err){ alert(err.message||String(err)); }
   };
 
@@ -106,6 +115,14 @@ export default function Host(){
               <button onClick={onReset} className="button warning">Reset</button>
               <a href={boardHref} className="button outline" target="_blank" rel="noreferrer">Open Board</a>
             </div>
+            <div className="row">
+              <label>Join URL <input readOnly value={joinUrl} /></label>
+            </div>
+            {qrUrl && (
+              <div className="row">
+                <img alt="Join QR" src={qrUrl} style={{maxWidth:160}} />
+              </div>
+            )}
           </section>
           <section className="card">
             <h2>Called</h2>

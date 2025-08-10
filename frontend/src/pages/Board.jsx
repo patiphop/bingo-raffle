@@ -7,10 +7,9 @@ export default function Board(){
   const gameId = params.get('gameId');
 
   useEffect(()=>{
-    (async ()=>{
-      if(!gameId) return;
-      await pollBoard(gameId, setSnap);
-    })();
+    if(!gameId) return;
+    const stop = pollBoard(gameId, setSnap);
+    return () => stop && stop();
   },[gameId]);
 
   useEffect(()=>{

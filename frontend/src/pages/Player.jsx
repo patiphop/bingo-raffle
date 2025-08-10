@@ -40,9 +40,10 @@ export default function Player(){
 
   async function startPolling(gameId){
     if(!gameId) return;
-    await pollBoard(gameId, (snap)=>{
+    const stop = pollBoard(gameId, (snap)=>{
       setLastValue(snap.lastValue ?? '');
     });
+    return stop;
   }
 
   return (
