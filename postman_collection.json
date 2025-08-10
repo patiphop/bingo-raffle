@@ -1,0 +1,126 @@
+{
+  "info": {
+    "name": "Lucky Draw API Tests",
+    "description": "การทดสอบ Google Apps Script API สำหรับระบบบิงโก/สุ่มรางวัล",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "SHEET_URL",
+      "value": "YOUR_SHEET_URL_HERE",
+      "description": "URL ของ Google Apps Script Web App"
+    },
+    {
+      "key": "GAME_ID",
+      "value": "G_test123",
+      "description": "Game ID สำหรับทดสอบ"
+    }
+  ],
+  "item": [
+    {
+      "name": "Start Game",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "text/plain;charset=utf-8"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Test Bingo Game\",\n  \"type\": \"BINGO\",\n  \"gridSize\": 5,\n  \"numberMin\": 1,\n  \"numberMax\": 75,\n  \"freeCenter\": true,\n  \"winPatterns\": [\"ROW\", \"COLUMN\", \"DIAGONAL\"],\n  \"maxWinners\": 3,\n  \"noDuplicateWinners\": true,\n  \"boardRefreshSec\": 3\n}"
+        },
+        "url": {
+          "raw": "{{SHEET_URL}}/api/start",
+          "host": ["{{SHEET_URL}}"],
+          "path": ["api", "start"]
+        }
+      }
+    },
+    {
+      "name": "Join Game",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "text/plain;charset=utf-8"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"gameId\": \"{{GAME_ID}}\",\n  \"displayName\": \"Test Player\"\n}"
+        },
+        "url": {
+          "raw": "{{SHEET_URL}}/api/join",
+          "host": ["{{SHEET_URL}}"],
+          "path": ["api", "join"]
+        }
+      }
+    },
+    {
+      "name": "Draw Number",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "text/plain;charset=utf-8"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"gameId\": \"{{GAME_ID}}\"\n}"
+        },
+        "url": {
+          "raw": "{{SHEET_URL}}/api/draw",
+          "host": ["{{SHEET_URL}}"],
+          "path": ["api", "draw"]
+        }
+      }
+    },
+    {
+      "name": "Get Board",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{SHEET_URL}}/api/board?gameId={{GAME_ID}}",
+          "host": ["{{SHEET_URL}}"],
+          "path": ["api", "board"],
+          "query": [
+            {
+              "key": "gameId",
+              "value": "{{GAME_ID}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "CORS Preflight",
+      "request": {
+        "method": "OPTIONS",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "https://example.com"
+          },
+          {
+            "key": "Access-Control-Request-Method",
+            "value": "POST"
+          },
+          {
+            "key": "Access-Control-Request-Headers",
+            "value": "Content-Type"
+          }
+        ],
+        "url": {
+          "raw": "{{SHEET_URL}}/api/start",
+          "host": ["{{SHEET_URL}}"],
+          "path": ["api", "start"]
+        }
+      }
+    }
+  ]
+}
