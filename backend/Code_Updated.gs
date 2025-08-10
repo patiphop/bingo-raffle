@@ -2,6 +2,7 @@
  * Google Apps Script backend for Bingo/Raffle (MVP+)
  * Endpoints: /api/start, /api/join, /api/card, /api/draw, /api/undo, /api/claim, /api/board, /api/end, /api/reset
  * Storage: Google Sheets
+ * Updated with CORS headers
  */
 
 const SHEET_GAMES = 'Games';
