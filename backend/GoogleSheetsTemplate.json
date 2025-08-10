@@ -1,0 +1,11 @@
+{
+  "sheets": [
+    { "name": "Games", "headers": ["gameId","name","type","gridSize","numberMin","numberMax","freeCenter","winPatterns","maxWinners","noDuplicateWinners","status","hostTokenHash","lineTokenHash","boardRefreshSec","seed","createdAt","endedAt"] },
+    { "name": "Participants", "headers": ["participantId","gameId","displayName","lineUserId","joinedAt","won"] },
+    { "name": "Cards", "headers": ["cardId","gameId","participantId","gridSize","cellsJSON","freeCenter","notes","createdAt"] },
+    { "name": "Draws", "headers": ["drawId","gameId","value","sequence","drawnAt","undone"] },
+    { "name": "Winners", "headers": ["winnerId","gameId","participantId","pattern","rank","claimedAt","verifiedAt","prize","status"] },
+    { "name": "Config", "headers": ["key","value"] },
+    { "name": "BoardCache", "headers": ["gameId","cacheJSON","updatedAt"] }
+  ]
+}

@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Host Console — Bingo/Raffle</title>
+  <link rel="stylesheet" href="./css/styles.css" />
+</head>
+<body>
+  <header class="container">
+    <h1>Host Console</h1>
+    <nav><a href="./index.html">Home</a></nav>
+  </header>
+  <main class="container">
+    <section class="card">
+      <h2>Start Game</h2>
+      <form id="startForm" class="grid">
+        <label>Game Name <input name="name" required placeholder="Company Party Bingo" /></label>
+        <label>Type
+          <select name="type">
+            <option value="BINGO">BINGO</option>
+            <option value="RAFFLE">RAFFLE</option>
+          </select>
+        </label>
+        <div class="row">
+          <label>Grid Size <input type="number" name="gridSize" value="5" min="3" max="5" /></label>
+          <label>Number Min <input type="number" name="numberMin" value="1" /></label>
+          <label>Number Max <input type="number" name="numberMax" value="75" /></label>
+          <label>Free Center <input type="checkbox" name="freeCenter" checked /></label>
+        </div>
+        <fieldset>
+          <legend>Win Patterns</legend>
+          <label><input type="checkbox" name="winPatterns" value="ROW" checked /> ROW</label>
+          <label><input type="checkbox" name="winPatterns" value="COLUMN" checked /> COLUMN</label>
+          <label><input type="checkbox" name="winPatterns" value="DIAGONAL" checked /> DIAGONAL</label>
+          <label><input type="checkbox" name="winPatterns" value="FOUR_CORNERS" /> FOUR_CORNERS</label>
+        </fieldset>
+        <div class="row">
+          <label>Max Winners <input type="number" name="maxWinners" value="3" min="1" /></label>
+          <label>No Duplicate Winners <input type="checkbox" name="noDuplicateWinners" checked /></label>
+          <label>Board Refresh (sec) <input type="number" name="boardRefreshSec" value="3" min="2" max="5" /></label>
+        </div>
+        <button class="button" type="submit">Start</button>
+      </form>
+      <div id="startResult" class="muted"></div>
+    </section>
+
+    <section class="card" id="hostActions" style="display:none">
+      <h2>Live Controls</h2>
+      <div class="row">
+        <button id="btnDraw" class="button">Draw Next</button>
+        <button id="btnUndo" class="button secondary">Undo</button>
+        <button id="btnEnd" class="button danger">End Game</button>
+        <button id="btnReset" class="button warning">Reset</button>
+        <a id="boardLink" class="button outline" target="_blank">Open Board</a>
+      </div>
+      <div class="row">
+        <label>Join URL <input id="joinUrl" readonly /></label>
+      </div>
+      <div class="row">
+        <img id="qr" alt="Join QR" style="max-width:160px;" />
+      </div>
+    </section>
+
+    <section class="card" id="calledSection" style="display:none">
+      <h2>Called</h2>
+      <div id="lastValue" class="big"></div>
+      <ol id="calledList" class="called"></ol>
+    </section>
+
+    <section class="card" id="winnersSection" style="display:none">
+      <h2>Winners</h2>
+      <ol id="winners"></ol>
+    </section>
+  </main>
+
+  <script src="./js/api.js"></script>
+  <script>
+    let currentGameId = null;
+
+    function readStartForm(form){
+      const fd = new FormData(form);
+      const winPatterns = fd.getAll('winPatterns');
+      return {
+        name: fd.get('name') || 'Bingo Game',
+        type: fd.get('type') || 'BINGO',
+        gridSize: Number(fd.get('gridSize')||5),
+        numberMin: Number(fd.get('numberMin')||1),
+        numberMax: Number(fd.get('numberMax')||75),
+        freeCenter: !!fd.get('freeCenter'),
+        winPatterns,
+        maxWinners: Number(fd.get('maxWinners')||1),
+        noDuplicateWinners: !!fd.get('noDuplicateWinners'),
+        boardRefreshSec: Number(fd.get('boardRefreshSec')||3)
+      };
+    }
+
+    document.getElementById('startForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const cfg = readStartForm(e.currentTarget);
+      try {
+        const res = await apiStart(cfg);
+        currentGameId = res.gameId;
+        document.getElementById('startResult').textContent = JSON.stringify(res, null, 2);
+        document.getElementById('hostActions').style.display = '';
+        document.getElementById('calledSection').style.display = '';
+        document.getElementById('winnersSection').style.display = '';
+        document.getElementById('boardLink').href = `./board.html?gameId=${encodeURIComponent(res.gameId)}`;
+        document.getElementById('joinUrl').value = res.joinUrl || '';
+        if(res.joinUrl){
+          const u = new URL(res.joinUrl);
+          const qrUrl = `https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=${encodeURIComponent(u.href)}`;
+          document.getElementById('qr').src = qrUrl;
+        }
+      } catch(err){ alert(err.message || err); }
+    });
+
+    document.getElementById('btnDraw').onclick = async ()=>{
+      if(!currentGameId) return;
+      const res = await apiDraw({gameId: currentGameId});
+      renderCalled(res);
+    };
+
+    document.getElementById('btnUndo').onclick = async ()=>{
+      if(!currentGameId) return;
+      await apiUndo({gameId: currentGameId});
+      // refresh board snapshot
+      const b = await apiBoard(currentGameId);
+      renderBoardSnapshot(b);
+    };
+
+    document.getElementById('btnEnd').onclick = async ()=>{
+      if(!currentGameId) return;
+      if(!confirm('End this game?')) return;
+      await apiEnd({gameId: currentGameId});
+      alert('Game ended.');
+    };
+
+    document.getElementById('btnReset').onclick = async ()=>{
+      if(!currentGameId) return;
+      if(!confirm('Reset this game to DRAFT and clear sub-data?')) return;
+      await apiReset({gameId: currentGameId});
+      alert('Game reset.');
+    };
+
+    function renderCalled(res){
+      if(!res) return;
+      document.getElementById('lastValue').textContent = res.value ?? '';
+      const list = document.getElementById('calledList');
+      list.innerHTML = '';
+      (res.called||[]).slice().reverse().forEach(v=>{
+        const li = document.createElement('li');
+        li.textContent = v;
+        list.appendChild(li);
+      });
+    }
+
+    function renderBoardSnapshot(b){
+      if(!b) return;
+      document.getElementById('lastValue').textContent = b.lastValue ?? '';
+      const list = document.getElementById('calledList');
+      list.innerHTML = '';
+      (b.called||[]).slice().reverse().forEach(v=>{
+        const li = document.createElement('li');
+        li.textContent = v;
+        list.appendChild(li);
+      });
+      const w = document.getElementById('winners');
+      w.innerHTML = '';
+      (b.winners||[]).forEach(x=>{
+        const li = document.createElement('li');
+        li.textContent = `#${x.rank} ${x.displayName} — ${x.pattern}`;
+        w.appendChild(li);
+      });
+    }
+  </script>
+</body>
+</html>

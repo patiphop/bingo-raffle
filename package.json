@@ -1,0 +1,17 @@
+{
+  "name": "bingo-raffle-webapp",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Bingo (5x5) and Raffle web app — static frontend on GitHub Pages + Google Apps Script backend",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "vite",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --host --port 5174"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}

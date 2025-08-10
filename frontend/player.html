@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Player — Bingo/Raffle</title>
+  <link rel="stylesheet" href="./css/styles.css" />
+</head>
+<body>
+  <header class="container">
+    <h1>Player</h1>
+    <nav><a href="./index.html">Home</a></nav>
+  </header>
+  <main class="container">
+    <section class="card">
+      <h2>Join Game</h2>
+      <form id="joinForm" class="row">
+        <label>Game ID <input name="gameId" required placeholder="G_abc123" /></label>
+        <label>Display Name <input name="displayName" required placeholder="Pat" /></label>
+        <button class="button" type="submit">Join</button>
+      </form>
+      <pre id="joinResult" class="muted"></pre>
+    </section>
+
+    <section class="card" id="cardSection" style="display:none">
+      <h2>Your Card</h2>
+      <div id="cardGrid" class="grid grid-5"></div>
+      <button id="btnClaim" class="button" style="display:none">Claim Bingo</button>
+    </section>
+
+    <section class="card" id="statusSection" style="display:none">
+      <h2>Live Status</h2>
+      <div id="lastValue" class="big"></div>
+      <div class="muted">Auto-refresh</div>
+    </section>
+  </main>
+
+  <script src="./js/api.js"></script>
+  <script>
+    let current = { gameId:null, participantId:null, cardId:null, gridSize:5, freeCenter:true };
+
+    function buildCardGrid(cells, gridSize, freeCenter){
+      const el = document.getElementById('cardGrid');
+      el.innerHTML = '';
+      for(let r=0;r<gridSize;r++){
+        for(let c=0;c<gridSize;c++){
+          const v = cells[r][c];
+          const div = document.createElement('div');
+          div.className = 'cell';
+          if(freeCenter && r===Math.floor(gridSize/2) && c===Math.floor(gridSize/2)){
+            div.textContent = 'FREE';
+            div.classList.add('free');
+          } else {
+            div.textContent = v;
+          }
+          el.appendChild(div);
+        }
+      }
+    }
+
+    document.getElementById('joinForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const fd = new FormData(e.currentTarget);
+      const payload = { gameId: fd.get('gameId'), displayName: fd.get('displayName') };
+      try {
+        const res = await apiJoin(payload);
+        current.gameId = payload.gameId;
+        current.participantId = res.participantId;
+        if(res.cardId){ current.cardId = res.cardId; }
+        document.getElementById('joinResult').textContent = JSON.stringify(res, null, 2);
+        document.getElementById('statusSection').style.display = '';
+        if(res.cells){
+          current.gridSize = res.gridSize || 5;
+          current.freeCenter = !!res.freeCenter;
+          buildCardGrid(res.cells, current.gridSize, current.freeCenter);
+          document.getElementById('cardSection').style.display = '';
+          document.getElementById('btnClaim').style.display = '';
+        }
+        startPolling();
+      } catch(err){ alert(err.message || err); }
+    });
+
+    async function startPolling(){
+      if(!current.gameId) return;
+      await pollBoard(current.gameId, (snap)=>{
+        document.getElementById('lastValue').textContent = snap.lastValue ?? '';
+      });
+    }
+
+    document.getElementById('btnClaim').onclick = async ()=>{
+      if(!current.gameId || !current.participantId) return;
+      const res = await apiClaim({ gameId: current.gameId, participantId: current.participantId });
+      alert(res.valid ? `BINGO! Pattern: ${res.pattern}, Rank: ${res.rank}` : 'Not valid yet.');
+    };
+  </script>
+</body>
+</html>

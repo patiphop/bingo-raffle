@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Live Board — Bingo/Raffle</title>
+  <link rel="stylesheet" href="./css/styles.css" />
+  <style>
+    body { background: #0b0f1a; color: #f3f6ff; }
+    .gridBoard { display:grid; grid-template-columns: repeat(15, minmax(0,1fr)); gap:6px; }
+    .gridBoard .n { padding:8px 6px; border-radius:6px; background:#11162a; text-align:center; }
+    .gridBoard .n.called { background:#1f3a8a; font-weight:700; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <h1 id="gameName">Live Board</h1>
+    <div id="lastValue" class="giant"></div>
+    <div class="row">
+      <span class="muted">Updated: <span id="updated"></span></span>
+    </div>
+    <section id="numbersSection" class="card dark">
+      <h2>Numbers</h2>
+      <div id="allNumbers" class="gridBoard"></div>
+    </section>
+    <section class="card dark">
+      <h2>Winners</h2>
+      <ol id="winners"></ol>
+    </section>
+  </main>
+
+  <script src="./js/api.js"></script>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const gameId = params.get('gameId');
+
+    function renderNumbers(min=1, max=75, called=[]) {
+      const set = new Set(called||[]);
+      const el = document.getElementById('allNumbers');
+      el.innerHTML = '';
+      for(let n=min;n<=max;n++){
+        const div = document.createElement('div');
+        div.className = 'n' + (set.has(n)?' called':'');
+        div.textContent = n;
+        el.appendChild(div);
+      }
+    }
+
+    (async function init(){
+      if(!gameId){
+        document.getElementById('gameName').textContent = 'Missing gameId in URL';
+        return;
+      }
+      await pollBoard(gameId, (snap)=>{
+        if(snap.game){
+          document.getElementById('gameName').textContent = `${snap.game.name} — ${snap.game.status}`;
+        }
+        document.getElementById('lastValue').textContent = snap.lastValue ?? '';
+        document.getElementById('updated').textContent = snap.lastUpdatedAt || '';
+
+        const numbersSection = document.getElementById('numbersSection');
+        if(snap.game && snap.game.type === 'RAFFLE'){
+          // Hide numbers grid for RAFFLE
+          numbersSection.style.display = 'none';
+        } else {
+          numbersSection.style.display = '';
+          renderNumbers((snap.numberMin||1),(snap.numberMax||75), snap.called||[]);
+        }
+
+        const w = document.getElementById('winners');
+        w.innerHTML = '';
+        (snap.winners||[]).forEach(x=>{
+          const li = document.createElement('li');
+          li.textContent = `#${x.rank} ${x.displayName} — ${x.pattern}`;
+          w.appendChild(li);
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
