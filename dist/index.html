@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bingo / Raffle — Lobby</title>
+  <link rel="stylesheet" crossorigin href="./assets/index-CctQsTIe.css">
+</head>
+<body>
+  <header class="container">
+    <h1>Bingo / Raffle</h1>
+    <p>Frontend for GitHub Pages + Google Apps Script backend</p>
+  </header>
+  <main class="container grid">
+    <section class="card">
+      <h2>Host Console</h2>
+      <p>Start/End game, Draw/Undo, and open the live board.</p>
+      <a class="button" href="./host.html">Open Host</a>
+    </section>
+    <section class="card">
+      <h2>Player</h2>
+      <p>Join a game and play Bingo or watch Raffle results.</p>
+      <a class="button" href="./player.html">Open Player</a>
+    </section>
+    <section class="card">
+      <h2>Board (Projector)</h2>
+      <p>Full-screen live board for the event screen.</p>
+      <a class="button" href="./board.html">Open Board</a>
+    </section>
+  </main>
+  <footer class="container small">
+    <details>
+      <summary>Backend Settings (Apps Script Web App URL)</summary>
+      <label for="apiBaseUrl">API Base URL:</label>
+      <input id="apiBaseUrl" placeholder="https://script.google.com/macros/s/XXXX/exec" />
+      <button id="saveApi">Save</button>
+      <p class="muted">Stored in localStorage. Pages will use this for API calls.</p>
+    </details>
+  </footer>
+  <script>
+    const input = document.getElementById('apiBaseUrl');
+    const saved = localStorage.getItem('apiBaseUrl') || '';
+    input.value = saved;
+    document.getElementById('saveApi').onclick = () => {
+      localStorage.setItem('apiBaseUrl', input.value.trim());
+      alert('Saved API Base URL.');
+    };
+  </script>
+</body>
+</html>

@@ -57,3 +57,29 @@ async function pollBoard(gameId, onUpdate, intervalSec){
     await new Promise(r=>setTimeout(r, intervalSec*1000));
   }
 }
+
+// Expose for tests and Node
+if (typeof globalThis !== 'undefined') {
+  const apiExport = {
+    ensureBase,
+    getJSON,
+    postJSON,
+    apiStart,
+    apiDraw,
+    apiUndo,
+    apiEnd,
+    apiReset,
+    apiJoin,
+    apiCard,
+    apiClaim,
+    apiBoard,
+    pollBoard,
+    get __polling() { return __polling; },
+    set __polling(value) { __polling = value; }
+  };
+  // namespace to avoid polluting globals
+  globalThis.__api__ = apiExport;
+}
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = globalThis.__api__;
+}
