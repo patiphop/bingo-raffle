@@ -2,7 +2,8 @@
 // Priority: SHEET_URL (.env) -> localStorage('apiBaseUrl') -> ''
 const ENV_BASE = (import.meta.env?.SHEET_URL || '').trim();
 const LS_BASE = (typeof localStorage !== 'undefined' ? (localStorage.getItem('apiBaseUrl') || '') : '').trim();
-const API_BASE = ENV_BASE || LS_BASE || '';
+const RAW_BASE = ENV_BASE || LS_BASE || '';
+const API_BASE = RAW_BASE.replace(/\/$/, '');
 
 function ensureBase(){
   if(!API_BASE){ throw new Error('Please set SHEET_URL in .env (or localStorage apiBaseUrl)'); }
@@ -10,20 +11,25 @@ function ensureBase(){
 
 async function getJSON(path){
   ensureBase();
-  const res = await fetch(API_BASE + path, { method: 'GET' });
+  const url = API_BASE + path;
+  const res = await fetch(url, { method: 'GET' });
   if(!res.ok){ throw new Error('HTTP ' + res.status); }
   return await res.json();
 }
 
 async function postJSON(path, payload){
   ensureBase();
-  const res = await fetch(API_BASE + path, {
+  const url = API_BASE + path;
+  const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify(payload||{})
   });
   if(!res.ok){
     let msg = 'HTTP ' + res.status;
+    if(res.status === 401){
+      msg += '\nUnauthorized — Check Google Apps Script Web App deployment:\n- Deploy > Manage deployments > Web app\n- Execute as: Me\n- Who has access: Anyone\n- Use the exact "Web app URL" as SHEET_URL';
+    }
     try { const t = await res.text(); if(t) msg += ('\n' + t); } catch {}
     throw new Error(msg);
   }

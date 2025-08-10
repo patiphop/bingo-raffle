@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { apiStart, apiDraw, apiUndo, apiEnd, apiReset, apiBoard } from '../lib/api.js';
+import QRCode from 'qrcode';
 
 export default function Host(){
   const [currentGameId, setCurrentGameId] = useState(null);
@@ -9,6 +10,7 @@ export default function Host(){
   const [winners, setWinners] = useState([]);
   const [joinUrl, setJoinUrl] = useState('');
   const [qrUrl, setQrUrl] = useState('');
+  const qrRef = useRef(null);
 
   const onStart = async (e)=>{
     e.preventDefault();
@@ -30,11 +32,15 @@ export default function Host(){
       const res = await apiStart(cfg);
       setCurrentGameId(res.gameId);
       setStartResult(JSON.stringify(res,null,2));
-      setJoinUrl(res.joinUrl || '');
-      if(res.joinUrl){
-        const u = new URL(res.joinUrl);
-        setQrUrl(`https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=${encodeURIComponent(u.href)}`);
-      } else {
+      // Build player join URL based on current site path (GitHub Pages safe)
+      const base = `${location.origin}${location.pathname}`; // e.g., https://user.github.io/repo/
+      const playerUrl = `${base}#/player?gameId=${encodeURIComponent(res.gameId)}`;
+      setJoinUrl(playerUrl);
+      try {
+        const dataUrl = await QRCode.toDataURL(playerUrl, { width: 200, margin: 1 });
+        setQrUrl(dataUrl);
+      } catch(e) {
+        console.warn('QR error', e);
         setQrUrl('');
       }
     }catch(err){ alert(err.message||String(err)); }
